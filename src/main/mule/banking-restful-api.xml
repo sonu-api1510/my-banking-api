@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
+	<apikit:config name="banking-restful-api-config"
+		api="resource::332fddef-7e16-4567-b07d-563626dff3dd:banking-restful-api:3.0.2:raml:zip:banking-restful-api.raml"
+		outboundHeadersMapName="outboundHeaders"
+		httpStatusVarName="httpStatus" />
+	<flow name="banking-restful-api-main">
+		<http:listener path="/api/*"
+			config-ref="HTTP_Listener_config">
+			<http:response
+				statusCode="#[vars.httpStatus default 200]">
+				<http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+			</http:response>
+			<http:error-response
+				statusCode="#[vars.httpStatus default 500]">
+				<http:body><![CDATA[#[payload]]]></http:body>
+				<http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<apikit:router config-ref="banking-restful-api-config" />
+		<error-handler>
+			<on-error-propagate type="APIKIT:BAD_REQUEST">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">400
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:NOT_FOUND">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">404
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate
+				type="APIKIT:METHOD_NOT_ALLOWED">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">405
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">406
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate
+				type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">415
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">501
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="banking-restful-api-console">
+		<http:listener path="/console/*"
+			config-ref="HTTP_Listener_config">
+			<http:response
+				statusCode="#[vars.httpStatus default 200]">
+				<http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+			</http:response>
+			<http:error-response
+				statusCode="#[vars.httpStatus default 500]">
+				<http:body><![CDATA[#[payload]]]></http:body>
+				<http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<apikit:console config-ref="banking-restful-api-config" />
+		<error-handler>
+			<on-error-propagate type="APIKIT:NOT_FOUND">
+				<ee:transform
+					xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">404
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow
+		name="put:\accounts\(accountId):application\json:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="6fc5c347-e33a-4028-9794-f8d83d2eb790" path="/put"
+			config-ref="HTTP_Listener_config" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerName: "Krish Anand",
+  address: "patna",
+  phoneNumber: "635433398"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow
+		name="patch:\accounts\(accountId):application\json:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="33efc171-0c56-44fc-90a0-7d71c2985449"
+			config-ref="HTTP_Listener_config" path="/patch" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "account updated"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get:\customers:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="c6128d1b-50c9-4f69-b32c-dcda4666f56c"
+			config-ref="HTTP_Listener_config" path="/cust" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerDetails: {
+    customerName: "sachin",
+    address: "BEML, Bangalore",
+    emailId: "sachin@gmail.com",
+    phone: 647487838,
+    age: 30
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get:\accounts\(accountId):banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="75a3bf7d-c9a2-472b-9413-2e4f746640a4"
+			config-ref="HTTP_Listener_config" path="/getId" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerDetails: {
+    customerName: "sachin",
+    address: "BEML, Bangalore",
+    emailId: "sachin@gmail.com",
+    phone: 647487838,
+    age: 30
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow
+		name="get:\accounts\(accountId)\balances\(balance):banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="aadf661b-77f0-4c74-a186-53d1ef215ac5"
+			config-ref="HTTP_Listener_config" path="/blnc" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+				<ee:set-variable variableName="balance">attributes.uriParams.'balance'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "your balance is": 7000
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow
+		name="get:\accounts\(accountId)\transections\(transectionId):banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="f42ea324-9027-407e-8096-80a88a5fc6a1"
+			config-ref="HTTP_Listener_config" path="/trans" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+				<ee:set-variable variableName="transectionId">attributes.uriParams.'transectionId'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"\n"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow
+		name="get:\accounts\(accountId)\balances:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="df24104f-83d6-4544-82d1-b1960477a7c7"
+			config-ref="HTTP_Listener_config" path="/balances" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    "Your Saving Account Balance is INR": 2000
+  }, 
+  {
+    "Your Current Account Balance is INR": 7000
+  }, 
+  {
+    "Your Credit Account Balance is INR": 5000
+  }
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get:\accounts:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="5e368548-55ef-453b-af7d-a218fe535306"
+			config-ref="HTTP_Listener_config" path="/accounts" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  customerDetails: {
+    customerName: "sachin",
+    address: "BEML, Bangalore",
+    emailId: "sachin@gmail.com",
+    phone: 647487838,
+    age: 30
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow
+		name="get:\accounts\(accountId)\transections:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="00ddf74b-84e4-454f-b688-4e6fe0f1656e" path="/transections"
+			config-ref="HTTP_Listener_config" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+			<ee:variables>
+				<ee:set-variable variableName="accountId">attributes.uriParams.'accountId'
+				</ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"\n"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow
+		name="post:\customers:application\json:banking-restful-api-config">
+		<http:listener doc:name="Listener"
+			doc:id="73643171-c13e-472e-8955-05e118b7c1bd"
+			config-ref="HTTP_Listener_config" path="postCust" />
+		<ee:transform
+			xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+			xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "account created sussfully",
+  statusCode: "201"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
